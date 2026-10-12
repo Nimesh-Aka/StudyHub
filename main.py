@@ -28,4 +28,20 @@ def get_note_by_id(note_id: int):
 @app.post("/notes")
 def create_note(note: Note):
     notes.append(note)
-    return note
+    return note 
+
+@app.put("/notes/{note_id}")
+def update_note(note_id: int, updated_note: Note):
+    for index, note in enumerate(notes):
+        if note.id == note_id:
+            notes[index] = updated_note
+            return updated_note
+    return {"error": "Note not found"}
+
+@app.delete("/notes/{note_id}")
+def delete_note(note_id: int):
+    for index, note in enumerate(notes):
+        if note.id == note_id:
+            deleted_note = notes.pop(index)
+            return deleted_note
+    return {"error": "Note not found"}
