@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from fastapi import Depends, FastAPI
 from models import Note
 from database import session, engine
@@ -40,31 +41,46 @@ init_db()
 def get_all_notes(db: Session = Depends(get_db)):
     db_notes = db.query(database_models.Note).all()
     return db_notes
-
+ 
 @app.get("/notes/{note_id}")
-def get_note_by_id(note_id: int):
-    for note in notes:
-        if note.id == note_id:
-            return note
+def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
+    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
+    if db_note:
+        return db_note
     return {"error": "Note not found"}
 
 @app.post("/notes")
-def create_note(note: Note):
-    notes.append(note)
-    return note 
+def create_note(note: Note, db: Session = Depends(get_db)):
+    db_note = database_models.Note(**note.model_dump()) # Create a new Note instance
+    db.add(db_note) # Add the new note to the database session
+    db.commit() # Commit the changes to the database
+    db.refresh(db_note)
+    return db_note # Return the newly created note
 
 @app.put("/notes/{note_id}")
-def update_note(note_id: int, updated_note: Note):
-    for index, note in enumerate(notes):
-        if note.id == note_id:
-            notes[index] = updated_note
-            return updated_note
-    return {"error": "Note not found"}
+def update_note(note_id: int, updated_note: Note, db: Session = Depends(get_db)):
+    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
+
+    if not db_note:
+        raise HTTPException(status_code=404, detail="Note not found")
+    
+    db_note.title = updated_note.title
+    db_note.description = updated_note.description
+    db_note.date = updated_note.date
+
+    db.commit()
+    db.refresh(db_note)
+
+    return db_note
 
 @app.delete("/notes/{note_id}")
-def delete_note(note_id: int):
-    for index, note in enumerate(notes):
-        if note.id == note_id:
-            deleted_note = notes.pop(index)
-            return deleted_note
-    return {"error": "Note not found"}
+def delete_note(note_id: int, db: Session = Depends(get_db)):
+    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
+
+    if not db_note:
+            raise HTTPException(status_code=404, detail="Note not found")
+
+    db.delete(db_note)
+    db.commit()
+
+    return {"message": "Note deleted successfully"}
