@@ -1,6 +1,6 @@
 from http.client import HTTPException
 from fastapi import Depends, FastAPI
-from models import Note
+from models import Note, User
 from database import session, engine
 import database_models
 from sqlalchemy.orm import Session
@@ -84,3 +84,51 @@ def delete_note(note_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Note deleted successfully"}
+
+@app.get("/users")
+def get_all_users(db: Session = Depends(get_db)):
+        db_users = db.query(database_models.User).all()
+        return db_users
+
+@app.post("/users")
+def create_user(user: User, db: Session = Depends(get_db)):
+    db_user = database_models.User(**user.model_dump()) # Create a new User instance
+    db.add(db_user) # Add the new user to the database session
+    db.commit() # Commit the changes to the database
+    db.refresh(db_user)
+    return db_user # Return the newly created user
+
+@app.get("/users/{user_id}")
+def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(database_models.User).filter(database_models.User.id == user_id).first()
+    if db_user:
+        return db_user
+    return {"error": "User not found"}
+
+@app.put("/users/{user_id}")
+def update_user(user_id: int, updated_user: User, db: Session = Depends(get_db)):
+    db_user = db.query(database_models.User).filter(database_models.User.id == user_id).first()
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db_user.name = updated_user.name
+    db_user.email = updated_user.email
+    db_user.password = updated_user.password
+
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(database_models.User).filter(database_models.User.id == user_id).first()
+
+    if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(db_user)
+    db.commit()
+
+    return {"message": "User deleted successfully"}
