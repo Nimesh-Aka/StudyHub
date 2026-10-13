@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from models import Note
+from database import session, engine
+import database_models
+from sqlalchemy.orm import Session
 
 app = FastAPI()
+
+database_models.Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def greet():
@@ -14,9 +19,27 @@ notes =[
     Note(id=4, title="Note 4", description="This is note 4", date="2024-06-04"),
 ]
 
+def get_db():
+    db = session()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def init_db():
+    db = session()
+    count = db.query(database_models.Note).count()
+    if count == 0:
+        for note in notes:
+            db.add(database_models.Note(**note.model_dump()))
+        db.commit()
+
+init_db()
+
 @app.get("/notes")
-def get_all_notes():
-    return notes
+def get_all_notes(db: Session = Depends(get_db)):
+    db_notes = db.query(database_models.Note).all()
+    return db_notes
 
 @app.get("/notes/{note_id}")
 def get_note_by_id(note_id: int):
