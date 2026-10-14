@@ -1,11 +1,23 @@
 from http.client import HTTPException
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from models import Note, User
 from database import session, engine
 import database_models
 from sqlalchemy.orm import Session
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 database_models.Base.metadata.create_all(bind=engine)
 
@@ -131,4 +143,4 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.delete(db_user)
     db.commit()
 
-    return {"message": "User deleted successfully"}
+    return {"message": "User deleted successfully"} 
