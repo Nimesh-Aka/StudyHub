@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Note(BaseModel):
-    id: int
+    id: int | None = None
     title: str
     description: str
     date: str

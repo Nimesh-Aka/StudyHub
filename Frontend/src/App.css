@@ -1,23 +1,4 @@
 
-.app {
-  max-width: 700px;
-  margin: 40px auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
-header {
-  margin-bottom: 30px;
-}
-
-header h1 {
-  margin-bottom: 5px;
-}
-
-header p {
-  color: #666;
-}
-
 .note-form {
   display: flex;
   flex-direction: column;
@@ -38,27 +19,21 @@ header p {
   resize: vertical;
 }
 
-button {
-  padding: 11px 16px;
-  border: none;
-  border-radius: 6px;
-  background: #2563eb;
-  color: white;
-  cursor: pointer;
-}
-
-.note-card {
+.note-actions {
+  display: flex;
+  gap: 10px;
   margin-top: 15px;
-  padding: 18px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
 }
 
-.note-card p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.note-actions button {
+  padding: 8px 14px;
 }
 
 .delete-button {
   background: #dc2626;
+}
+
+.error {
+  color: #dc2626;
+  margin-bottom: 16px;
 }

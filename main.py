@@ -63,7 +63,8 @@ def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
 
 @app.post("/notes")
 def create_note(note: Note, db: Session = Depends(get_db)):
-    db_note = database_models.Note(**note.model_dump()) # Create a new Note instance
+    note_data = note.model_dump(exclude={"id"})
+    db_note = database_models.Note(**note_data) # Create a new Note instance
     db.add(db_note) # Add the new note to the database session
     db.commit() # Commit the changes to the database
     db.refresh(db_note)
