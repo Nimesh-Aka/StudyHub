@@ -1,5 +1,4 @@
-from http.client import HTTPException
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from models import Note, User
 from database import session, engine
