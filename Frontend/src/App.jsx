@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getNotes,
   createNote,
@@ -8,13 +8,22 @@ import {
 } from "./api";
 import "./App.css";
 
+function getTodayDate() {
+  const today = new Date();
+  const localDate = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000
+  );
+
+  return localDate.toISOString().slice(0, 10);
+}
+
 function App() {
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(
-    new Date().toLocaleDateString("en-CA")
-  );
+  const [date, setDate] = useState(getTodayDate());
+
+  const dateInputRef = useRef(null);
 
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +36,7 @@ function App() {
       const data = await getNotes();
       setNotes(data);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unable to load notes.");
     } finally {
       setLoading(false);
     }
@@ -40,8 +49,9 @@ function App() {
   function resetForm() {
     setTitle("");
     setDescription("");
-    setDate(new Date().toLocaleDateString("en-CA"));
+    setDate(getTodayDate());
     setEditingId(null);
+    setError("");
   }
 
   async function handleSubmit(event) {
@@ -71,7 +81,7 @@ function App() {
       resetForm();
       await loadNotes();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unable to save the note.");
     } finally {
       setSaving(false);
     }
@@ -80,7 +90,7 @@ function App() {
   function handleEdit(note) {
     setTitle(note.title);
     setDescription(note.description);
-    setDate(note.date);
+    setDate(String(note.date).slice(0, 10));
     setEditingId(note.id);
     setError("");
 
@@ -95,99 +105,192 @@ function App() {
     try {
       setError("");
       await deleteNote(id);
-      await loadNotes();
 
       if (editingId === id) {
         resetForm();
       }
+
+      await loadNotes();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Unable to delete the note.");
     }
+  }
+
+  function openDatePicker() {
+    const input = dateInputRef.current;
+
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Fall back to focusing the native date input.
+      }
+    }
+
+    input.focus();
   }
 
   return (
     <div className="app">
-      <header>
-        <h1>My Notes</h1>
-        <p>Create and manage your notes.</p>
+      <header className="app-header">
+        <div className="brand">
+          <div className="brand-icon" aria-hidden="true">
+            ✎
+          </div>
+
+          <div>
+            <h1>My Notes</h1>
+            <p>Create, organize, and manage your notes.</p>
+          </div>
+        </div>
       </header>
 
-      <form className="note-form" onSubmit={handleSubmit}>
-        <h2>{editingId !== null ? "Edit Note" : "Create Note"}</h2>
+      <main className="dashboard">
+        <section className="panel form-panel">
+          <h2>{editingId !== null ? "Edit Note" : "Create a Note"}</h2>
 
-        <input
-          type="text"
-          placeholder="Note title"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          required
-        />
-
-        <textarea
-          placeholder="Write your note..."
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          required
-        />
-
-        <input
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-          required
-        />
-
-        <button type="submit" disabled={saving}>
-          {saving
-            ? "Saving..."
-            : editingId !== null
-              ? "Update Note"
-              : "Add Note"}
-        </button>
-
-        {editingId !== null && (
-          <button type="button" onClick={resetForm}>
-            Cancel Edit
-          </button>
-        )}
-      </form>
-
-      {error && <p className="error">{error}</p>}
-
-      <section className="notes-list">
-        <h2>Your Notes ({notes.length})</h2>
-
-        {loading && <p>Loading notes...</p>}
-
-        {!loading && !error && notes.length === 0 && (
-          <p>No notes yet. Create your first note!</p>
-        )}
-
-        {notes.map((note) => (
-          <article className="note-card" key={note.id}>
-            <h3>{note.title}</h3>
-            <p>{note.description}</p>
-            <small>{note.date}</small>
-
-            <div className="note-actions">
-              <button
-                type="button"
-                onClick={() => handleEdit(note)}
-              >
-                Edit
-              </button>
-
-              <button
-                type="button"
-                className="delete-button"
-                onClick={() => handleDelete(note.id)}
-              >
-                Delete
-              </button>
+          <form className="note-form" onSubmit={handleSubmit}>
+            <div className="form-field">
+              <label htmlFor="note-title">Title</label>
+              <input
+                id="note-title"
+                type="text"
+                placeholder="Enter your note title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                required
+              />
             </div>
-          </article>
-        ))}
-      </section>
+
+            <div className="form-field">
+              <label htmlFor="note-description">Description</label>
+              <textarea
+                id="note-description"
+                placeholder="Write something worth remembering..."
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                required
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="note-date">Date</label>
+
+              <div className="date-input-wrapper">
+                <input
+                  ref={dateInputRef}
+                  id="note-date"
+                  type="date"
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
+                  required
+                />
+
+                <button
+                  className="calendar-button"
+                  type="button"
+                  onClick={openDatePicker}
+                  aria-label="Open calendar"
+                  title="Open calendar"
+                >
+                  ▦
+                </button>
+              </div>
+            </div>
+
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={saving}
+            >
+              {saving
+                ? "Saving..."
+                : editingId !== null
+                  ? "Update Note"
+                  : "＋ Add Note"}
+            </button>
+
+            {editingId !== null && (
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                Cancel Edit
+              </button>
+            )}
+          </form>
+        </section>
+
+        <section className="notes-section">
+          <div className="notes-toolbar">
+            <div>
+              <h2>Your Notes</h2>
+              <p className="notes-subtitle">
+                All your notes in one place.
+              </p>
+            </div>
+
+            <span className="note-count">{notes.length} notes</span>
+          </div>
+
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+
+          {loading && <p className="status-message">Loading notes...</p>}
+
+          {!loading && notes.length === 0 && !error && (
+            <div className="empty-state">
+              <span className="empty-icon" aria-hidden="true">✎</span>
+              <strong>No notes yet</strong>
+              <p>Create your first note using the form.</p>
+            </div>
+          )}
+
+          {!loading && notes.length > 0 && (
+            <div className="notes-list">
+              {notes.map((note) => (
+                <article className="note-card" key={note.id}>
+                  <div className="note-card-header">
+                    <h3>{note.title}</h3>
+                    <span className="note-date">{note.date}</span>
+                  </div>
+
+                  <p className="note-description">{note.description}</p>
+
+                  <div className="note-actions">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(note)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      className="delete-button"
+                      onClick={() => handleDelete(note.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+
+      <footer className="app-footer">
+        StudyHub · Keep your thoughts organized.
+      </footer>
     </div>
   );
 }
