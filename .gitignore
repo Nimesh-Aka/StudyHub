@@ -3,3 +3,5 @@ __pycache__/
 Test.py
 test.py
 .env
+Frontend/node_modules/
+Frontend/dist/
