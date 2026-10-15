@@ -1,0 +1,477 @@
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  font-family: 'DM Sans', sans-serif;
+  color: #20283b;
+  background: #f5f7fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.app {
+  width: min(1120px, 92%);
+  margin: 0 auto;
+  padding: 42px 0 24px;
+}
+
+/* Header */
+
+.app-header {
+  margin-bottom: 32px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #4169e1;
+  color: white;
+  font-size: 27px;
+  box-shadow: 0 6px 16px #4169e133;
+}
+
+header h1 {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: clamp(27px, 4vw, 36px);
+  letter-spacing: -1.3px;
+  font-weight: 800;
+}
+
+header p {
+  margin: 6px 0 0;
+  color: #7a8499;
+  font-size: 15px;
+}
+
+/* Main layout */
+
+.dashboard {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.panel {
+  min-width: 0;
+  background: white;
+  border: 1px solid #e9edf5;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 8px 28px #23365b08;
+}
+
+.panel h2 {
+  margin: 0 0 22px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 19px;
+  letter-spacing: -0.5px;
+}
+
+/* Form */
+
+.note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.form-field label {
+  color: #536078;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.note-form input,
+.note-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e3e8f1;
+  background: #fafbfe;
+  color: #20283b;
+  border-radius: 11px;
+  padding: 13px 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.note-form input {
+  min-height: 48px;
+}
+
+.note-form textarea {
+  min-height: 145px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.note-form input:focus,
+.note-form textarea:focus {
+  border-color: #6485ee;
+  box-shadow: 0 0 0 3px #4169e116;
+}
+
+/* Date picker */
+
+.date-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.date-input-wrapper input[type="date"] {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  color-scheme: light;
+  cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  padding: 4px;
+}
+
+.calendar-button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  min-height: 48px;
+  border: 1px solid #dce4fa;
+  border-radius: 11px;
+  background: #eef2ff;
+  color: #4169e1;
+  font-size: 25px;
+  line-height: 1;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.calendar-button:hover {
+  background: #e0e8ff;
+  border-color: #b9c8ff;
+}
+
+.calendar-button:focus-visible {
+  outline: 3px solid #4169e155;
+  outline-offset: 2px;
+}
+
+/* Form buttons */
+
+.primary-button,
+.secondary-button {
+  width: 100%;
+  border: none;
+  border-radius: 11px;
+  padding: 13px 16px;
+  font-weight: 700;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.primary-button {
+  margin-top: 2px;
+  color: white;
+  background: #4169e1;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #3156c8;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  background: #f0f3f9;
+  color: #536078;
+  font-weight: 600;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #e5eaf4;
+}
+
+/* Notes section */
+
+.notes-section {
+  min-width: 0;
+}
+
+.notes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.notes-toolbar h2 {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 23px;
+  letter-spacing: -0.7px;
+}
+
+.notes-subtitle {
+  margin: 6px 0 0;
+  color: #7a8499;
+  font-size: 14px;
+}
+
+.note-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 30px;
+  padding: 5px 11px;
+  border-radius: 9px;
+  background: #e8edff;
+  color: #4169e1;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Note cards */
+
+.notes-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.note-card {
+  min-width: 0;
+  background: white;
+  border: 1px solid #e9edf5;
+  border-radius: 17px;
+  padding: 21px;
+  box-shadow: 0 5px 18px #23365b06;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.note-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px #23365b0d;
+}
+
+.note-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.note-card h3 {
+  margin: 0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.note-date {
+  display: inline-block;
+  color: #8993a6;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.note-description {
+  margin: 16px 0 20px;
+  color: #707b91;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.note-actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.note-actions button {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #eef2ff;
+  color: #4169e1;
+  transition: background 0.2s;
+}
+
+.note-actions button:hover {
+  background: #e0e8ff;
+}
+
+.note-actions .delete-button {
+  background: #fff0f0;
+  color: #d34e55;
+}
+
+.note-actions .delete-button:hover {
+  background: #ffe1e1;
+}
+
+/* Loading, empty state, and errors */
+
+.error {
+  color: #c83e48;
+  background: #fff0f0;
+  border: 1px solid #ffdada;
+  border-radius: 11px;
+  padding: 12px 15px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.status-message {
+  color: #7a8499;
+  font-size: 14px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  grid-column: 1 / -1;
+  text-align: center;
+  background: white;
+  border: 1px dashed #d9e0ed;
+  border-radius: 17px;
+  padding: 48px 20px;
+  color: #7a8499;
+}
+
+.empty-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: #eef2ff;
+  color: #4169e1;
+  font-size: 25px;
+}
+
+.empty-state strong {
+  color: #35405a;
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Footer */
+
+.app-footer {
+  padding: 32px 0 8px;
+  color: #8993a6;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* Responsive design */
+
+@media (max-width: 850px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .notes-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .app {
+    width: 92%;
+    padding-top: 28px;
+  }
+
+  .app-header {
+    margin-bottom: 25px;
+  }
+
+  .panel {
+    padding: 19px;
+  }
+
+  .notes-list {
+    grid-template-columns: 1fr;
+  }
+
+  .notes-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .note-card {
+    padding: 18px;
+  }
+}
