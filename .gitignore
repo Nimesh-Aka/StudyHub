@@ -5,3 +5,13 @@ test.py
 .env
 Frontend/node_modules/
 Frontend/dist/
+
+# Python test artifacts
+.pytest_cache/
+.coverage
+test_studyhub.db
+test_studyhub.db-*
+
+# Local environment files
+.env.*
+!.env.example
