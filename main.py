@@ -4,8 +4,16 @@ from models import Note, User
 from database import session, engine
 import database_models
 from sqlalchemy.orm import Session
+from contextlib import asynccontextmanager
+from datetime import datetime
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_database()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,8 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-database_models.Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def greet():
@@ -43,13 +49,28 @@ def get_db():
 
 def init_db():
     db = session()
-    count = db.query(database_models.Note).count()
-    if count == 0:
-        for note in notes:
-            db.add(database_models.Note(**note.model_dump()))
-        db.commit()
+    try:
+        count = db.query(database_models.Note).count()
 
-init_db()
+        if count == 0:
+            for note in notes:
+                db.add(
+                    database_models.Note(
+                        id=note.id,
+                        title=note.title,
+                        description=note.description,
+                        date=note.date,
+                    )
+                )
+            db.commit()
+    finally:
+        db.close()
+
+
+def initialize_database():
+    database_models.Base.metadata.create_all(bind=engine)
+    init_db()
+
 
 @app.get("/notes")
 def get_all_notes(db: Session = Depends(get_db)):
@@ -66,6 +87,7 @@ def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
 @app.post("/notes")
 def create_note(note: Note, db: Session = Depends(get_db)):
     note_data = note.model_dump(exclude={"id"})
+    note_data["date"] = datetime.fromisoformat(note.date)
     db_note = database_models.Note(**note_data) # Create a new Note instance
     db.add(db_note) # Add the new note to the database session
     db.commit() # Commit the changes to the database
@@ -81,7 +103,7 @@ def update_note(note_id: int, updated_note: Note, db: Session = Depends(get_db))
     
     db_note.title = updated_note.title
     db_note.description = updated_note.description
-    db_note.date = updated_note.date
+    db_note.date = datetime.fromisoformat(updated_note.date)
 
     db.commit()
     db.refresh(db_note)
