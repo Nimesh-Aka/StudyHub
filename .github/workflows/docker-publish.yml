@@ -38,9 +38,16 @@ jobs:
           push: true
           tags: nimeshaka/studyhub-frontend:latest
     
+      - name: Deploy backend to Render
+        if: github.ref == 'refs/heads/feature/docker-setup'
+        env:
+          DEPLOY_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: curl --fail --silent --show-error "$DEPLOY_URL"
+
       - name: Deploy frontend to Render
         if: github.ref == 'refs/heads/feature/docker-setup'
         env:
           DEPLOY_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
         run: curl --fail --silent --show-error "$DEPLOY_URL"
+
 
