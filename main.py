@@ -76,7 +76,7 @@ def initialize_database():
     init_db()
 
 
-@app.get("/notestest")
+@app.get("/notes")
 def get_all_notes(db: Session = Depends(get_db)):
     db_notes = db.query(database_models.Note).all()
     return db_notes
