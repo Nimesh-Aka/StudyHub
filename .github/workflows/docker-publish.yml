@@ -64,7 +64,7 @@ jobs:
         with:
           context: ./Frontend
           push: true
-          tags: 
+          tags: |
             nimeshaka/studyhub-frontend:latest
             nimeshaka/studyhub-frontend:${{ github.sha }}
 
