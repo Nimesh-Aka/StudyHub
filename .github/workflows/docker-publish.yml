@@ -55,15 +55,18 @@ jobs:
         with:
           context: .
           push: true
-          tags: nimeshaka/studyhub-backend:latest
+          tags: |
+                nimeshaka/studyhub-backend:latest
+                nimeshaka/studyhub-backend:${{ github.sha }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
           context: ./Frontend
           push: true
-          tags: nimeshaka/studyhub-frontend:latest
-
+          tags: 
+            nimeshaka/studyhub-frontend:latest
+            nimeshaka/studyhub-frontend:${{ github.sha }}
       - name: Deploy backend to Render
         env:
           DEPLOY_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
