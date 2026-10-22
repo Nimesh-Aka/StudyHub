@@ -120,4 +120,5 @@ def test_delete_note():
     assert response.json()["message"] == "Note deleted successfully"
 
     get_response = client.get(f"/notes/{created['id']}")
-    assert get_response.json() == {"error": "Note not found"}
+    assert get_response.status_code == 404
+    assert get_response.json() == {"detail": "Note not found"}
