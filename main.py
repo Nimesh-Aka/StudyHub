@@ -33,7 +33,7 @@ app.add_middleware(
 def greet():
     return "Hello!!!"
 
-@app.get("/health", methods=["GET", "HEAD"])
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "ok"}
 
