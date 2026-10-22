@@ -33,6 +33,10 @@ app.add_middleware(
 def greet():
     return "Hello!!!"
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
 notes =[
     Note(id=1, title="Note 1", description="This is note 1", date="2024-06-01"),
     Note(id=2, title="Note 2", description="This is note 2", date="2024-06-02"),

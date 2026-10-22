@@ -73,6 +73,22 @@ jobs:
           DEPLOY_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
         run: curl --fail --silent --show-error "$DEPLOY_URL"
 
+      - name: Wait for backend health check
+        run: |
+          for i in {1..12}; do
+            if curl --fail --silent --show-error \
+              https://studyhub-dr7f.onrender.com/health; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+
+            echo "Backend not ready yet. Retrying in 10 seconds..."
+            sleep 10
+          done
+
+          echo "Backend health check failed!"
+          exit 1
+      
       - name: Deploy frontend to Render
         env:
           DEPLOY_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
