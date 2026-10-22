@@ -83,10 +83,17 @@ def get_all_notes(db: Session = Depends(get_db)):
  
 @app.get("/notes/{note_id}")
 def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
-    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
-    if db_note:
-        return db_note
-    return {"error": "Note not found"}
+    db_note = db.query(database_models.Note).filter(
+        database_models.Note.id == note_id
+    ).first()
+
+    if not db_note:
+        raise HTTPException(
+            status_code=404,
+            detail="Note not found"
+        )
+
+    return db_note
 
 @app.post("/notes")
 def create_note(note: Note, db: Session = Depends(get_db)):
