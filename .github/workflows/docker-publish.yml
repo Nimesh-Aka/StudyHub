@@ -93,3 +93,22 @@ jobs:
         env:
           DEPLOY_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
         run: curl --fail --silent --show-error "$DEPLOY_URL"
+
+      - name: Wait for frontend health check
+        run: |
+          for i in {1..12}; do
+            echo "Frontend health check attempt $i/12"
+
+            if curl --fail --silent --show-error \
+              --max-time 10 \
+              https://studyhub-frontend-7fp6.onrender.com/; then
+              echo "Frontend is reachable!"
+              exit 0
+            fi
+
+            echo "Frontend not ready. Retrying in 10 seconds..."
+            sleep 10
+          done
+
+          echo "Frontend health check failed!"
+          exit 1
