@@ -77,7 +77,7 @@ jobs:
         run: |
           for i in {1..12}; do
             if curl --fail --silent --show-error \
-              https://studyhub-dr7f.onrender.com/health; then
+              https://studyhub-backend-8u98.onrender.com/health; then
               echo "Backend is healthy!"
               exit 0
             fi
