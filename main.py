@@ -7,6 +7,13 @@ from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from datetime import datetime 
 import logging
+import os
+import sentry_sdk
+
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    send_default_pii=False,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
