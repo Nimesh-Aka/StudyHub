@@ -23,11 +23,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-@app.get("/sentry-debug")
-async def sentry_debug():
-    division_by_zero = 1 / 0
-    return {"result": division_by_zero}
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
