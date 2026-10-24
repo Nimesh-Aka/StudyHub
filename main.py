@@ -6,6 +6,7 @@ import database_models
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from datetime import datetime 
+import logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -14,6 +15,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,43 +103,91 @@ def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
 
     return db_note
 
+
 @app.post("/notes")
 def create_note(note: Note, db: Session = Depends(get_db)):
-    note_data = note.model_dump(exclude={"id"})
-    note_data["date"] = datetime.fromisoformat(note.date)
-    db_note = database_models.Note(**note_data) # Create a new Note instance
-    db.add(db_note) # Add the new note to the database session
-    db.commit() # Commit the changes to the database
-    db.refresh(db_note)
-    return db_note # Return the newly created note
+    try:
+        note_data = note.model_dump(exclude={"id"})
+        note_data["date"] = datetime.fromisoformat(note.date)
+
+        db_note = database_models.Note(**note_data)
+        db.add(db_note)
+        db.commit()
+        db.refresh(db_note)
+
+        logger.info("Note created successfully. Note ID: %s", db_note.id)
+        return db_note
+
+    except Exception:
+        db.rollback()
+        logger.exception("Failed to create note")
+        raise
+
+
 
 @app.put("/notes/{note_id}")
-def update_note(note_id: int, updated_note: Note, db: Session = Depends(get_db)):
-    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
+def update_note(
+    note_id: int,
+    updated_note: Note,
+    db: Session = Depends(get_db)
+):
+    try:
+        db_note = db.query(database_models.Note).filter(
+            database_models.Note.id == note_id
+        ).first()
 
-    if not db_note:
-        raise HTTPException(status_code=404, detail="Note not found")
-    
-    db_note.title = updated_note.title
-    db_note.description = updated_note.description
-    db_note.date = datetime.fromisoformat(updated_note.date)
+        if not db_note:
+            raise HTTPException(
+                status_code=404,
+                detail="Note not found"
+            )
 
-    db.commit()
-    db.refresh(db_note)
+        db_note.title = updated_note.title
+        db_note.description = updated_note.description
+        db_note.date = datetime.fromisoformat(updated_note.date)
 
-    return db_note
+        db.commit()
+        db.refresh(db_note)
+
+        logger.info("Note updated successfully. Note ID: %s", note_id)
+        return db_note
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        db.rollback()
+        logger.exception("Failed to update note. Note ID: %s", note_id)
+        raise
+
 
 @app.delete("/notes/{note_id}")
 def delete_note(note_id: int, db: Session = Depends(get_db)):
-    db_note = db.query(database_models.Note).filter(database_models.Note.id == note_id).first()
+    try:
+        db_note = db.query(database_models.Note).filter(
+            database_models.Note.id == note_id
+        ).first()
 
-    if not db_note:
-            raise HTTPException(status_code=404, detail="Note not found")
+        if not db_note:
+            raise HTTPException(
+                status_code=404,
+                detail="Note not found"
+            )
 
-    db.delete(db_note)
-    db.commit()
+        db.delete(db_note)
+        db.commit()
 
-    return {"message": "Note deleted successfully"}
+        logger.info("Note deleted successfully. Note ID: %s", note_id)
+        return {"message": "Note deleted successfully"}
+
+    except HTTPException:
+        raise
+
+    except Exception:
+        db.rollback()
+        logger.exception("Failed to delete note. Note ID: %s", note_id)
+        raise
+
 
 @app.get("/users")
 def get_all_users(db: Session = Depends(get_db)):
