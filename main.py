@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import Note, User
+from models import Note, User, UserCreate, UserResponse
 from database import session, engine
 import database_models
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from datetime import datetime
 import logging
 import os
 import sentry_sdk
+from security import hash_password
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
@@ -196,27 +197,48 @@ def delete_note(note_id: int, db: Session = Depends(get_db)):
         raise
 
 
-@app.get("/users")
+@app.get("/users", response_model=list[UserResponse])
 def get_all_users(db: Session = Depends(get_db)):
-        db_users = db.query(database_models.User).all()
-        return db_users
+    db_users = db.query(database_models.User).all()
+    return db_users
 
-@app.post("/users")
-def create_user(user: User, db: Session = Depends(get_db)):
-    db_user = database_models.User(**user.model_dump()) # Create a new User instance
-    db.add(db_user) # Add the new user to the database session
-    db.commit() # Commit the changes to the database
+@app.post("/users", response_model=UserResponse, status_code=201)
+def create_user(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
+    existing_user = (
+        db.query(database_models.User)
+        .filter(database_models.User.email == user.email)
+        .first()
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=409,
+            detail="Email already registered"
+        )
+
+    db_user = database_models.User(
+        name=user.name,
+        email=str(user.email),
+        password=hash_password(user.password)
+    )
+
+    db.add(db_user)
+    db.commit()
     db.refresh(db_user)
-    return db_user # Return the newly created user
 
-@app.get("/users/{user_id}")
+    return db_user
+
+@app.get("/users/{user_id}", response_model=UserResponse)
 def get_user_by_id(user_id: int, db: Session = Depends(get_db)):
     db_user = db.query(database_models.User).filter(database_models.User.id == user_id).first()
     if db_user:
         return db_user
     return {"error": "User not found"}
 
-@app.put("/users/{user_id}")
+@app.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: int, updated_user: User, db: Session = Depends(get_db)):
     db_user = db.query(database_models.User).filter(database_models.User.id == user_id).first()
 
