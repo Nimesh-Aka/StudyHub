@@ -1,6 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from models import Note, User, UserCreate, UserResponse
+from models import Note, User, UserCreate, UserResponse, LoginRequest, Token
 from database import session, engine
 import database_models
 from sqlalchemy.orm import Session
@@ -9,7 +9,7 @@ from datetime import datetime
 import logging
 import os
 import sentry_sdk
-from security import hash_password
+from security import hash_password, verify_password, create_access_token
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
@@ -265,3 +265,34 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "User deleted successfully"} 
+
+
+@app.post("/auth/login", response_model=Token)
+def login(
+    credentials: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    db_user = (
+        db.query(database_models.User)
+        .filter(
+            database_models.User.email == credentials.email
+        )
+        .first()
+    )
+
+    if not db_user or not verify_password(
+        credentials.password,
+        db_user.password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    access_token = create_access_token(db_user.id)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
