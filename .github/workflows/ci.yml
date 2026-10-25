@@ -11,6 +11,10 @@ jobs:
   test-backend:
     runs-on: ubuntu-latest
 
+    env:
+      JWT_SECRET_KEY: "test-only-secret-key-for-studyhub-ci"
+      DATABASE_URL: "sqlite:///./test_studyhub.db"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
