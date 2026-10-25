@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source files
-COPY main.py database.py database_models.py models.py ./
+COPY main.py database.py database_models.py models.py security.py ./
 
 # The API listens on port 8000
 EXPOSE 8000
