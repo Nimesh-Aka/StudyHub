@@ -5,7 +5,11 @@ import {
   createNote,
   updateNote,
   deleteNote,
+  getToken,
+  clearToken,
+  getCurrentUser,
 } from "./api";
+import Auth from "./Auth";
 import "./App.css";
 
 function getTodayDate() {
@@ -18,6 +22,12 @@ function getTodayDate() {
 }
 
 function App() {
+  // Authentication state
+  const [token, setToken] = useState(() => getToken());
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  // Notes state
   const [notes, setNotes] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -29,6 +39,79 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Check whether the stored token is still valid.
+  useEffect(() => {
+    let active = true;
+
+    async function checkAuthentication() {
+      if (!getToken()) {
+        if (active) {
+          setAuthChecking(false);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser();
+
+        if (active) {
+          setCurrentUser(user);
+          setToken(getToken());
+        }
+      } catch {
+        clearToken();
+
+        if (active) {
+          setToken(null);
+          setCurrentUser(null);
+          setNotes([]);
+        }
+      } finally {
+        if (active) {
+          setAuthChecking(false);
+        }
+      }
+    }
+
+    checkAuthentication();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Load notes after authentication succeeds.
+  useEffect(() => {
+    if (!token || !currentUser) return;
+
+    loadNotes();
+  }, [token, currentUser]);
+
+  // Handle expired or invalid JWTs.
+  useEffect(() => {
+    function handleUnauthorized() {
+      clearToken();
+      setToken(null);
+      setCurrentUser(null);
+      setNotes([]);
+      setEditingId(null);
+      setError("Your session has expired. Please sign in again.");
+    }
+
+    window.addEventListener(
+      "studyhub:unauthorized",
+      handleUnauthorized
+    );
+
+    return () => {
+      window.removeEventListener(
+        "studyhub:unauthorized",
+        handleUnauthorized
+      );
+    };
+  }, []);
 
   async function loadNotes() {
     try {
@@ -42,9 +125,42 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    loadNotes();
-  }, []);
+  function handleLogin() {
+    const storedToken = getToken();
+
+    if (!storedToken) {
+      setToken(null);
+      setCurrentUser(null);
+      return;
+    }
+
+    setAuthChecking(true);
+
+    getCurrentUser()
+      .then((user) => {
+        setCurrentUser(user);
+        setToken(storedToken);
+        setError("");
+      })
+      .catch(() => {
+        clearToken();
+        setToken(null);
+        setCurrentUser(null);
+        setError("Unable to verify your session. Please sign in again.");
+      })
+      .finally(() => {
+        setAuthChecking(false);
+      });
+  }
+
+  function handleLogout() {
+    clearToken();
+    setToken(null);
+    setCurrentUser(null);
+    setNotes([]);
+    setLoading(true);
+    resetForm();
+  }
 
   function resetForm() {
     setTitle("");
@@ -133,6 +249,22 @@ function App() {
     input.focus();
   }
 
+  // Show a loading screen while checking authentication.
+  if (authChecking) {
+    return (
+      <div className="app">
+        <main className="dashboard">
+          <p className="status-message">Checking your session...</p>
+        </main>
+      </div>
+    );
+  }
+
+  // Show login and registration when signed out.
+  if (!token || !currentUser) {
+    return <Auth onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app">
       <header className="app-header">
@@ -145,6 +277,20 @@ function App() {
             <h1>My Notes</h1>
             <p>Create, organize, and manage your notes.</p>
           </div>
+        </div>
+
+        <div className="user-controls">
+          <span className="welcome-message">
+            Welcome, {currentUser.name}
+          </span>
+
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={handleLogout}
+          >
+            Log Out
+          </button>
         </div>
       </header>
 
@@ -235,7 +381,9 @@ function App() {
               </p>
             </div>
 
-            <span className="note-count">{notes.length} notes</span>
+            <span className="note-count">
+              {notes.length} {notes.length === 1 ? "note" : "notes"}
+            </span>
           </div>
 
           {error && (
@@ -244,11 +392,15 @@ function App() {
             </p>
           )}
 
-          {loading && <p className="status-message">Loading notes...</p>}
+          {loading && (
+            <p className="status-message">Loading notes...</p>
+          )}
 
           {!loading && notes.length === 0 && !error && (
             <div className="empty-state">
-              <span className="empty-icon" aria-hidden="true">✎</span>
+              <span className="empty-icon" aria-hidden="true">
+                ✎
+              </span>
               <strong>No notes yet</strong>
               <p>Create your first note using the form.</p>
             </div>
@@ -260,10 +412,14 @@ function App() {
                 <article className="note-card" key={note.id}>
                   <div className="note-card-header">
                     <h3>{note.title}</h3>
-                    <span className="note-date">{note.date}</span>
+                    <span className="note-date">
+                      {String(note.date).slice(0, 10)}
+                    </span>
                   </div>
 
-                  <p className="note-description">{note.description}</p>
+                  <p className="note-description">
+                    {note.description}
+                  </p>
 
                   <div className="note-actions">
                     <button

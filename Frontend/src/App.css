@@ -38,6 +38,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* =========================
+   Main Application
+========================= */
+
 .app {
   width: min(1120px, 92%);
   margin: 0 auto;
@@ -83,6 +87,47 @@ header p {
   font-size: 15px;
 }
 
+/* User controls */
+
+.user-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #e9edf5;
+  border-radius: 14px;
+}
+
+.welcome-message {
+  color: #536078;
+  font-size: 14px;
+}
+
+.welcome-message strong {
+  color: #20283b;
+  font-weight: 700;
+}
+
+.logout-button {
+  border: 1px solid #e3e8f1;
+  border-radius: 9px;
+  padding: 9px 15px;
+  background: #f5f7fb;
+  color: #536078;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.logout-button:hover {
+  background: #e9edf5;
+  border-color: #d5ddeb;
+}
+
 /* Main layout */
 
 .dashboard {
@@ -108,7 +153,9 @@ header p {
   letter-spacing: -0.5px;
 }
 
-/* Form */
+/* =========================
+   Note Form
+========================= */
 
 .note-form {
   display: flex;
@@ -246,7 +293,9 @@ header p {
   background: #e5eaf4;
 }
 
-/* Notes section */
+/* =========================
+   Notes Section
+========================= */
 
 .notes-section {
   min-width: 0;
@@ -373,7 +422,9 @@ header p {
   background: #ffe1e1;
 }
 
-/* Loading, empty state, and errors */
+/* =========================
+   Loading, Errors and Empty State
+========================= */
 
 .error {
   color: #c83e48;
@@ -435,7 +486,158 @@ header p {
   font-size: 12px;
 }
 
-/* Responsive design */
+/* =========================
+   Authentication
+   Login and Registration
+========================= */
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 16px;
+  background:
+    radial-gradient(
+      circle at top left,
+      #e8edff 0,
+      transparent 38%
+    ),
+    #f5f7fb;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+  padding: 36px;
+  background: white;
+  border: 1px solid #e9edf5;
+  border-radius: 22px;
+  box-shadow: 0 16px 48px #23365b0d;
+}
+
+.auth-header {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.auth-brand-icon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 18px;
+  border-radius: 17px;
+  background: #4169e1;
+  color: white;
+  font-size: 30px;
+  box-shadow: 0 6px 16px #4169e133;
+}
+
+.auth-header h1 {
+  margin: 0;
+  color: #20283b;
+  font-family: 'Manrope', sans-serif;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.auth-header p {
+  margin: 10px 0 0;
+  color: #7a8499;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-form .form-field input {
+  width: 100%;
+  min-height: 49px;
+  padding: 13px 14px;
+  border: 1px solid #e3e8f1;
+  border-radius: 11px;
+  outline: none;
+  background: #fafbfe;
+  color: #20283b;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-form .form-field input:focus {
+  border-color: #6485ee;
+  box-shadow: 0 0 0 3px #4169e116;
+}
+
+.auth-form .primary-button {
+  min-height: 49px;
+  margin-top: 4px;
+}
+
+.auth-switch {
+  margin: 24px 0 0;
+  color: #7a8499;
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-switch button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #4169e1;
+  font-weight: 700;
+}
+
+.auth-switch button:hover {
+  color: #3156c8;
+  text-decoration: underline;
+}
+
+.auth-footer {
+  margin-top: 25px;
+  color: #8993a6;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Authentication loading screen */
+
+.auth-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 100vh;
+  padding: 24px;
+  color: #7a8499;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid #e3e8f1;
+  border-top-color: #4169e1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   Responsive Design
+========================= */
 
 @media (max-width: 850px) {
   .dashboard {
@@ -473,5 +675,23 @@ header p {
 
   .note-card {
     padding: 18px;
+  }
+
+  .user-controls {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .logout-button {
+    width: 100%;
+  }
+
+  .auth-card {
+    padding: 26px 21px;
+    border-radius: 18px;
+  }
+
+  .auth-header h1 {
+    font-size: 26px;
   }
 }

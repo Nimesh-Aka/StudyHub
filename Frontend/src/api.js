@@ -1,47 +1,125 @@
 
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+).replace(/\/$/, "");
 
-async function request(url, options = {}) {
-  const response = await fetch(url, options);
+const TOKEN_KEY = "studyhub_access_token";
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || "Something went wrong");
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function saveToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+async function request(path, options = {}, authenticated = true) {
+  const headers = {
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...options.headers,
+  };
+
+  if (authenticated) {
+    const token = getToken();
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
   }
 
-  return response.json();
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    if (response.status === 401 && authenticated) {
+      clearToken();
+      window.dispatchEvent(new Event("studyhub:unauthorized"));
+    }
+
+    const detail = data.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((item) => item.msg).join(", ")
+          : "Something went wrong";
+
+    throw new Error(message);
+  }
+
+  return data;
 }
 
-// GET: Fetch all notes
+// Authentication
+
+export function registerUser(user) {
+  return request(
+    "/users",
+    {
+      method: "POST",
+      body: JSON.stringify(user),
+    },
+    false
+  );
+}
+
+export function loginUser(email, password) {
+  const body = new URLSearchParams({
+    username: email,
+    password,
+  });
+
+  return request(
+    "/auth/login",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    },
+    false
+  );
+}
+
+export function getCurrentUser() {
+  return request("/users/me");
+}
+
+// Notes CRUD
+
 export function getNotes() {
-  return request(`${API_URL}/notes`);
+  return request("/notes");
 }
 
-// POST: Create a new note
 export function createNote(note) {
-  return request(`${API_URL}/notes`, {
+  return request("/notes", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(note),
   });
 }
 
-// PUT: Update an existing note
 export function updateNote(id, note) {
-  return request(`${API_URL}/notes/${id}`, {
+  return request(`/notes/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(note),
   });
 }
 
-// DELETE: Delete a note
 export function deleteNote(id) {
-  return request(`${API_URL}/notes/${id}`, {
+  return request(`/notes/${id}`, {
     method: "DELETE",
   });
 }
