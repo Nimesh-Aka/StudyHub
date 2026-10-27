@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -11,6 +12,12 @@ class Note(Base):
     description = Column(String, nullable=False)
     date = Column(DateTime, nullable=False)
 
+    # Temporary nullable field while we migrate existing notes
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    owner = relationship("User", back_populates="notes")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -18,3 +25,5 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
+
+    notes = relationship("Note", back_populates="owner")

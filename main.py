@@ -1,5 +1,6 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import jwt
 from models import Note, User, UserCreate, UserResponse, LoginRequest, Token
 from database import session, engine
 import database_models
@@ -10,6 +11,8 @@ import logging
 import os
 import sentry_sdk
 from security import hash_password, verify_password, create_access_token
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from security import SECRET_KEY, ALGORITHM
 
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
@@ -18,7 +21,6 @@ sentry_sdk.init(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    initialize_database()
     yield
 
 
@@ -67,63 +69,104 @@ def get_db():
     finally:
         db.close()
 
-def init_db():
-    db = session()
+
+
+bearer_scheme = HTTPBearer()
+
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+):
+    token = credentials.credentials
+
     try:
-        count = db.query(database_models.Note).count()
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+        )
 
-        if count == 0:
-            for note in notes:
-                db.add(
-                    database_models.Note(
-                        id=note.id,
-                        title=note.title,
-                        description=note.description,
-                        date=note.date,
-                    )
-                )
-            db.commit()
-    finally:
-        db.close()
+        user_id = int(payload["sub"])
 
+    except (jwt.InvalidTokenError, KeyError, TypeError, ValueError):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-def initialize_database():
-    database_models.Base.metadata.create_all(bind=engine)
-    init_db()
+    current_user = (
+        db.query(database_models.User)
+        .filter(database_models.User.id == user_id)
+        .first()
+    )
 
+    if current_user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return current_user
 
 @app.get("/notes")
-def get_all_notes(db: Session = Depends(get_db)):
-    db_notes = db.query(database_models.Note).all()
-    return db_notes
+def get_all_notes(
+    db: Session = Depends(get_db),
+    current_user: database_models.User = Depends(get_current_user),
+):
+    return (
+        db.query(database_models.Note)
+        .filter(database_models.Note.user_id == current_user.id)
+        .all()
+    )
  
 @app.get("/notes/{note_id}")
-def get_note_by_id(note_id: int, db: Session = Depends(get_db)):
-    db_note = db.query(database_models.Note).filter(
-        database_models.Note.id == note_id
-    ).first()
+def get_note_by_id(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: database_models.User = Depends(get_current_user),
+):
+    db_note = (
+        db.query(database_models.Note)
+        .filter(
+            database_models.Note.id == note_id,
+            database_models.Note.user_id == current_user.id,
+        )
+        .first()
+    )
 
     if not db_note:
-        raise HTTPException(
-            status_code=404,
-            detail="Note not found"
-        )
+        raise HTTPException(status_code=404, detail="Note not found")
 
     return db_note
 
 
 @app.post("/notes")
-def create_note(note: Note, db: Session = Depends(get_db)):
+def create_note(
+    note: Note,
+    db: Session = Depends(get_db),
+    current_user: database_models.User = Depends(get_current_user),
+):
     try:
         note_data = note.model_dump(exclude={"id"})
         note_data["date"] = datetime.fromisoformat(note.date)
 
-        db_note = database_models.Note(**note_data)
+        db_note = database_models.Note(
+            **note_data,
+            user_id=current_user.id,
+        )
+
         db.add(db_note)
         db.commit()
         db.refresh(db_note)
 
-        logger.info("Note created successfully. Note ID: %s", db_note.id)
+        logger.info(
+            "Note created successfully. Note ID: %s, User ID: %s",
+            db_note.id,
+            current_user.id,
+        )
         return db_note
 
     except Exception:
@@ -137,18 +180,21 @@ def create_note(note: Note, db: Session = Depends(get_db)):
 def update_note(
     note_id: int,
     updated_note: Note,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: database_models.User = Depends(get_current_user),
 ):
     try:
-        db_note = db.query(database_models.Note).filter(
-            database_models.Note.id == note_id
-        ).first()
+        db_note = (
+            db.query(database_models.Note)
+            .filter(
+                database_models.Note.id == note_id,
+                database_models.Note.user_id == current_user.id,
+            )
+            .first()
+        )
 
         if not db_note:
-            raise HTTPException(
-                status_code=404,
-                detail="Note not found"
-            )
+            raise HTTPException(status_code=404, detail="Note not found")
 
         db_note.title = updated_note.title
         db_note.description = updated_note.description
@@ -157,12 +203,15 @@ def update_note(
         db.commit()
         db.refresh(db_note)
 
-        logger.info("Note updated successfully. Note ID: %s", note_id)
+        logger.info(
+            "Note updated successfully. Note ID: %s, User ID: %s",
+            note_id,
+            current_user.id,
+        )
         return db_note
 
     except HTTPException:
         raise
-
     except Exception:
         db.rollback()
         logger.exception("Failed to update note. Note ID: %s", note_id)
@@ -170,32 +219,40 @@ def update_note(
 
 
 @app.delete("/notes/{note_id}")
-def delete_note(note_id: int, db: Session = Depends(get_db)):
+def delete_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: database_models.User = Depends(get_current_user),
+):
     try:
-        db_note = db.query(database_models.Note).filter(
-            database_models.Note.id == note_id
-        ).first()
+        db_note = (
+            db.query(database_models.Note)
+            .filter(
+                database_models.Note.id == note_id,
+                database_models.Note.user_id == current_user.id,
+            )
+            .first()
+        )
 
         if not db_note:
-            raise HTTPException(
-                status_code=404,
-                detail="Note not found"
-            )
+            raise HTTPException(status_code=404, detail="Note not found")
 
         db.delete(db_note)
         db.commit()
 
-        logger.info("Note deleted successfully. Note ID: %s", note_id)
+        logger.info(
+            "Note deleted successfully. Note ID: %s, User ID: %s",
+            note_id,
+            current_user.id,
+        )
         return {"message": "Note deleted successfully"}
 
     except HTTPException:
         raise
-
     except Exception:
         db.rollback()
         logger.exception("Failed to delete note. Note ID: %s", note_id)
         raise
-
 
 @app.get("/users", response_model=list[UserResponse])
 def get_all_users(db: Session = Depends(get_db)):
@@ -230,6 +287,14 @@ def create_user(
     db.refresh(db_user)
 
     return db_user
+
+
+@app.get("/users/me", response_model=UserResponse)
+def read_current_user(
+    current_user: database_models.User = Depends(get_current_user),
+):
+    return current_user
+
 
 @app.get("/users/{user_id}", response_model=UserResponse)
 def get_user_by_id(user_id: int, db: Session = Depends(get_db)):

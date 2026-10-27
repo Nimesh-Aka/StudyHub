@@ -10,4 +10,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not configured")
 engine = create_engine(DATABASE_URL)
-session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+session = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
